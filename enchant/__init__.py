@@ -98,6 +98,7 @@ except ImportError:
 from enchant.errors import *
 from enchant.utils import EnchantStr, get_default_language, UTF16EnchantStr
 from enchant.pypwl import PyPWL
+import pickle
 
 #  Due to the unfortunate name collision between the enchant "tokenize" module
 #  and the stdlib "tokenize" module, certain values of sys.path can cause
@@ -526,7 +527,7 @@ class Dict(_EnchantObject):
 
     """
 
-    def __init__(self,tag=None,broker=None):
+    def __init__(self,tag=None,broker=None, vocab_from_pickle=True):
         """Dict object constructor.
 
         A dictionary belongs to a specific language, identified by the
@@ -554,6 +555,13 @@ class Dict(_EnchantObject):
                 err = err + "be determined."
                 raise Error(err)
         self.tag = tag
+
+        if vocab_from_pickle:
+            with open(tag+'_vocab.pkl', 'rb') as vocab_file:
+                self.vocab = pickle.load(vocab_file)
+        else:
+            self.vocab = None
+
         # If no broker was given, use the default broker
         if broker is None:
             broker = _broker
@@ -643,6 +651,8 @@ class Dict(_EnchantObject):
         This method takes a word in the dictionary language and returns
         True if it is correctly spelled, and false otherwise.
         """
+        if self.vocab: return word in self.vocab
+            
         self._check_this()
         word = self._StringClass(word)
         # Enchant asserts that the word is non-empty.
